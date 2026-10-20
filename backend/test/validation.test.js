@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { emailSchema, passwordSchema, registerSchema, appMetadataSchema, safeDisplayName, safePackageFilename } from '../src/validation.js';
+test('email is normalized',()=>assert.equal(emailSchema.parse(' A@Example.COM '),'a@example.com'));
+test('invalid email is rejected',()=>assert.equal(emailSchema.safeParse('bad').success,false));
+test('password minimum enforced',()=>{assert.equal(passwordSchema.safeParse('tiny').success,false);assert.equal(passwordSchema.safeParse('long-enough-password').success,true)});
+test('register rejects extra fields',()=>{const x={email:'a@b.com',password:'long-enough-password',displayName:'Dev'};assert.equal(registerSchema.safeParse(x).success,true);assert.equal(registerSchema.safeParse({...x,role:'admin'}).success,false)});
+test('package id must resemble reverse-domain id',()=>{const x={name:'App',packageId:'com.example.app',description:'A useful app description that is long enough.',category:'Tools',version:'1.2.0'};assert.equal(appMetadataSchema.safeParse(x).success,true);assert.equal(appMetadataSchema.safeParse({...x,packageId:'bad'}).success,false)});
+test('category is constrained',()=>{const x={name:'App',packageId:'com.example.app',description:'A useful app description that is long enough.',category:'FakeCategory',version:'1.0'};assert.equal(appMetadataSchema.safeParse(x).success,false)});
+test('display names and filenames are sanitized',()=>{assert.equal(safeDisplayName('<Hi>'),'Hi');assert.equal(safePackageFilename('../a b.apk'),'.._a_b.apk')});
